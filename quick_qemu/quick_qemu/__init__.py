@@ -113,7 +113,7 @@ def help():
 
 
 def main(argv, config=default_config):
-    if len(argv) == 0:
+    if len(argv) == 0 or argv[1] in ("-h", "-help", "--help"):
         help()
         return
     signal.signal(signal.SIGINT, qqemu_cleanup)
