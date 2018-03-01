@@ -43,13 +43,14 @@ def start_qemu(qemu_argv, config):
     cmdargs += ["-machine", "pc-i440fx-2.5,accel=kvm"]
     cmdargs += ["-cpu", config["cpu"]]
     cmdargs += ["-rtc", "base=localtime,driftfix=slew", "-no-hpet"]
+    cmdargs += ["-global", "kvm-pit.lost_tick_policy=discard"]
     cmdargs += ["-enable-kvm"]
     cmdargs += ["-balloon", "virtio"]
     cmdargs += ["-smp", "cpus={cores},threads=1".format(cores=config["cores"])]
-    cmdargs += ["-m", config["memory"]
+    cmdargs += ["-m", config["memory"]]
     cmdargs += ["-vga", "qxl"]
     cmdargs += ["-device", "virtio-serial"]
-    if output == "external_spice":
+    if config["output"] == "external_spice":
         cmdargs += ["-spice", "gl=on,disable-ticketing,unix,addr=/run/user/{}/spice.sock".format(os.getuid())]
         cmdargs += ["-device", "ich9-usb-ehci1,id=usb"]
         cmdargs += ["-device", "ich9-usb-uhci1,masterbus=usb.0,firstport=0,multifunction=on"]
@@ -63,7 +64,7 @@ def start_qemu(qemu_argv, config):
         cmdargs += ["-device", "usb-redir,chardev=usbredirchardev3,id=usbredirdev3"]
         #cmdargs += ["-device", "virtserialport,chardev=charchannel1,id=channel1,name=org.spice-space.webdav.0", "-chardev", "spiceport,name=org.spice-space.webdav.0,id=charchannel1"]
     else:
-        cmdargs += ["-display", output]
+        cmdargs += ["-display", config["output"]]
     cmdargs += ["-soundhw", "hda"]
     cmdargs += ["-boot", "order=d,once=cd"]
     cmdargs += ["-netdev", "user,id=qemunet0,net=10.0.2.0/24,dhcpstart=10.0.2.15"]
@@ -119,7 +120,7 @@ def main(argv, config=default_config):
     qemu_process = start_qemu(argv, config)
     if not qemu_process:
         return
-    if output == "external_spice":
+    if config["output"] == "external_spice":
         time.sleep(5)
         viewer_process = start_viewer()
 
@@ -127,7 +128,7 @@ def main(argv, config=default_config):
     while True:
         if qemu_process.poll() is not None:
             break
-        if output == "external_spice":
+        if config["output"] == "external_spice":
             if viewer_process.poll() is not None:
                 break
         time.sleep(3)
