@@ -8,6 +8,7 @@ import time
 
 default_config = {
     "arch": "/usr/bin/qemu-system-x86_64",
+    "virtviewer": "/usr/bin/remote-viewer",
     "mac": "00:aa:31:25:2a:00",
     "memory": "2048",
     "cores": "2",
@@ -104,8 +105,8 @@ def start_qemu(qemu_argv, config):
     return subprocess.Popen(cmdargs)
 
 # part of virt-viewer
-def start_viewer():
-    cmdargs = ["/usr/bin/remote-viewer", "spice+unix:///run/user/{}/spice.sock".format(os.getuid())]
+def start_viewer(config):
+    cmdargs = [config["virtviewer"], "spice+unix:///run/user/{}/spice.sock".format(os.getuid())]
     return subprocess.Popen(cmdargs)
 
 def help():
@@ -113,16 +114,25 @@ def help():
 
 
 def main(argv, config=default_config):
-    if len(argv) == 0 or argv[1] in ("-h", "-help", "--help"):
+    if len(argv) == 0 or argv[0] in ("-h", "-help", "--help"):
         help()
         return
+
+    if not os.path.isfile(config["arch"]):
+        print("Qemu not found:", config["arch"], file=sys.stderr)
+        return
+
+    if not os.path.isfile(config["virtviewer"]):
+        print("remote-view of virtviewer not found:", config["virtviewer"], file=sys.stderr)
+        return
+
     signal.signal(signal.SIGINT, qqemu_cleanup)
     qemu_process = start_qemu(argv, config)
     if not qemu_process:
         return
     if config["output"] == "external_spice":
         time.sleep(5)
-        viewer_process = start_viewer()
+        viewer_process = start_viewer(config)
 
 
     while True:
