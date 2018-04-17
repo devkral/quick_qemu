@@ -14,7 +14,7 @@ default_config = {
     "cores": "2",
     "sambashare": "$HOME/share_quickqemu",
     "output": "external_spice",
-    "port": "12983",
+    "glrendering": "QUICK_QEMU_GL_RENDERING" in os.environ,
     "cpu": "Opteron_G3" # good supported
 }
 
@@ -49,10 +49,15 @@ def start_qemu(qemu_argv, config):
     cmdargs += ["-balloon", "virtio"]
     cmdargs += ["-smp", "cpus={cores},threads=1".format(cores=config["cores"])]
     cmdargs += ["-m", config["memory"]]
-    cmdargs += ["-vga", "qxl"]
     cmdargs += ["-device", "virtio-serial"]
     if config["output"] == "external_spice":
-        cmdargs += ["-spice", "gl=on,disable-ticketing,unix,addr=/run/user/{}/spice.sock".format(os.getuid())]
+        if config["glrendering"]
+            cmdargs += ["-device", "virtio-vga,virgl=on"]
+            cmdargs += ["-spice", "gl=on,disable-ticketing,unix,addr=/run/user/{}/quick_qemu_spice.sock".format(os.getuid())]
+        else:
+            cmdargs += ["-vga", "qxl"]
+            cmdargs += ["-spice", "disable-ticketing,unix,addr=/run/user/{}/quick_qemu_spice.sock".format(os.getuid())]
+
         cmdargs += ["-device", "ich9-usb-ehci1,id=usb"]
         cmdargs += ["-device", "ich9-usb-uhci1,masterbus=usb.0,firstport=0,multifunction=on"]
         cmdargs += ["-device", "ich9-usb-uhci2,masterbus=usb.0,firstport=2"]
@@ -65,11 +70,12 @@ def start_qemu(qemu_argv, config):
         cmdargs += ["-device", "usb-redir,chardev=usbredirchardev3,id=usbredirdev3"]
         #cmdargs += ["-device", "virtserialport,chardev=charchannel1,id=channel1,name=org.spice-space.webdav.0", "-chardev", "spiceport,name=org.spice-space.webdav.0,id=charchannel1"]
     else:
+        cmdargs += ["-vga", "qxl"]
         cmdargs += ["-display", config["output"]]
     cmdargs += ["-soundhw", "hda"]
     cmdargs += ["-boot", "order=d,once=cd"]
     cmdargs += ["-netdev", "user,id=qemunet0,net=10.0.2.0/24,dhcpstart=10.0.2.15"]
-    
+
     if config["sambashare"]:
         sambashare = os.path.realpath(os.path.expandvars(os.path.expanduser(config["sambashare"])))
         if os.path.exists(sambashare):
