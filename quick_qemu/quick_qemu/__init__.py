@@ -51,7 +51,7 @@ def start_qemu(qemu_argv, config):
     cmdargs += ["-m", config["memory"]]
     cmdargs += ["-device", "virtio-serial"]
     if config["output"] == "external_spice":
-        if config["glrendering"]
+        if config["glrendering"]:
             cmdargs += ["-device", "virtio-vga,virgl=on"]
             cmdargs += ["-spice", "gl=on,disable-ticketing,unix,addr=/run/user/{}/quick_qemu_spice.sock".format(os.getuid())]
         else:
@@ -112,7 +112,7 @@ def start_qemu(qemu_argv, config):
 
 # part of virt-viewer
 def start_viewer(config):
-    cmdargs = [config["virtviewer"], "spice+unix:///run/user/{}/spice.sock".format(os.getuid())]
+    cmdargs = [config["virtviewer"], "spice+unix:///run/user/{}/quick_qemu_spice.sock".format(os.getuid())]
     return subprocess.Popen(cmdargs)
 
 def help():

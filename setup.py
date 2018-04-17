@@ -5,7 +5,7 @@ license: MIT, see LICENSE.txt
 
 from setuptools import setup
 
-version = "0.2.0"
+version = "0.2.1"
 
 
 entry_points = {"console_scripts": []}
