@@ -73,7 +73,7 @@ def start_qemu(qemu_argv, config):
         cmdargs += ["-vga", "qxl"]
         cmdargs += ["-display", config["output"]]
     cmdargs += ["-soundhw", "hda"]
-    cmdargs += ["-boot", "order=d,once=cd"]
+    cmdargs += ["-boot", "order=cd,once=dc"]
     cmdargs += ["-netdev", "user,id=qemunet0,net=10.0.2.0/24,dhcpstart=10.0.2.15"]
 
     if config["sambashare"]:
