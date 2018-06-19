@@ -15,7 +15,7 @@ default_config = {
     "sambashare": "$HOME/share_quickqemu",
     "output": "external_spice",
     "glrendering": "QUICK_QEMU_GL_RENDERING" in os.environ,
-    "cpu": "Opteron_G3" # good supported
+    "cpu": "Opteron_G3"  # good supported
 }
 
 qemu_process = None
@@ -39,6 +39,7 @@ def qqemu_cleanup(*args):
         if viewer_process:
             viewer_process.kill()
 
+
 def start_qemu(qemu_argv, config):
     cmdargs = [config["arch"]]
     cmdargs += ["-machine", "pc-i440fx-2.5,accel=kvm"]
@@ -46,7 +47,7 @@ def start_qemu(qemu_argv, config):
     cmdargs += ["-rtc", "base=localtime,driftfix=slew", "-no-hpet"]
     cmdargs += ["-global", "kvm-pit.lost_tick_policy=discard"]
     cmdargs += ["-enable-kvm"]
-    cmdargs += ["-balloon", "virtio"]
+    cmdargs += ["-device", "virtio-balloon"]
     cmdargs += ["-smp", "cpus={cores},threads=1".format(cores=config["cores"])]
     cmdargs += ["-m", config["memory"]]
     cmdargs += ["-device", "virtio-serial"]
@@ -110,16 +111,21 @@ def start_qemu(qemu_argv, config):
             cmdargs.append(elem)
     return subprocess.Popen(cmdargs)
 
+
 # part of virt-viewer
 def start_viewer(config):
     cmdargs = [config["virtviewer"], "spice+unix:///run/user/{}/quick_qemu_spice.sock".format(os.getuid())]
     return subprocess.Popen(cmdargs)
+
 
 def help():
     print("Usage: quick_quemu [<isofile>|<discfile>|-<parameter> <argument>]...")
 
 
 def main(argv, config=default_config):
+    global qemu_process
+    global viewer_process
+
     if len(argv) == 0 or argv[0] in ("-h", "-help", "--help"):
         help()
         return
@@ -140,7 +146,6 @@ def main(argv, config=default_config):
         time.sleep(5)
         viewer_process = start_viewer(config)
 
-
     while True:
         if qemu_process.poll() is not None:
             break
@@ -149,4 +154,3 @@ def main(argv, config=default_config):
                 break
         time.sleep(3)
     qqemu_cleanup()
-
