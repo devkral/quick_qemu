@@ -15,7 +15,8 @@ default_config = {
     "sambashare": "$HOME/share_quickqemu",
     "output": "external_spice",
     "glrendering": "QUICK_QEMU_GL_RENDERING" in os.environ,
-    "cpu": "Opteron_G3"  # good supported
+    "cpu": os.environ.get("QUICK_QEMU_CPU", "Opteron_G1"),
+    "machine": os.environ.get("QUICK_QEMU_MACHINE", "pc-q35-3.0,accel=kvm"),
 }
 
 qemu_process = None
