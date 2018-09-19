@@ -16,7 +16,7 @@ default_config = {
     "output": "external_spice",
     "glrendering": "QUICK_QEMU_GL_RENDERING" in os.environ,
     "cpu": os.environ.get("QUICK_QEMU_CPU", "Opteron_G1"),
-    "machine": os.environ.get("QUICK_QEMU_MACHINE", "pc-q35-3.0,accel=kvm"),
+    "machine": os.environ.get("QUICK_QEMU_MACHINE", "pc,accel=kvm"),
 }
 
 qemu_process = None
@@ -43,7 +43,7 @@ def qqemu_cleanup(*args):
 
 def start_qemu(qemu_argv, config):
     cmdargs = [config["arch"]]
-    cmdargs += ["-machine", "pc-i440fx-2.5,accel=kvm"]
+    cmdargs += ["-machine", config["machine"]]
     cmdargs += ["-cpu", config["cpu"]]
     cmdargs += ["-rtc", "base=localtime,driftfix=slew", "-no-hpet"]
     cmdargs += ["-global", "kvm-pit.lost_tick_policy=discard"]
