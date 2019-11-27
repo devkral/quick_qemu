@@ -159,6 +159,12 @@ def start_qemu(qemu_argv, config):
                 )
                 return None
                 # cmdargs.append(elem)  # not path
+            # first check if it is a valid file then check access
+            if not os.access(path, os.R_OK | os.W_OK):
+                print(
+                    "No permission:", path, file=sys.stderr
+                )
+                return None
         else:
             # switch if - less argument is encountered
             if elem[0] != "-":
