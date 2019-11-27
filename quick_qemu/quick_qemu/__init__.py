@@ -5,6 +5,7 @@ import os
 import subprocess
 import signal
 import time
+import stat
 
 default_config = {
     "arch": "/usr/bin/qemu-system-x86_64",
@@ -22,6 +23,13 @@ default_config = {
 qemu_process = None
 viewer_process = None
 cleanuptried = False
+
+
+def is_device(path):
+    try:
+        return stat.S_ISBLK(os.stat(path).st_mode)
+    except Exception:
+        return False
 
 
 def qqemu_cleanup(*args):
@@ -55,54 +63,102 @@ def start_qemu(qemu_argv, config):
     if config["output"] == "external_spice":
         if config["glrendering"]:
             cmdargs += ["-device", "virtio-vga,virgl=on"]
-            cmdargs += ["-spice", "gl=on,disable-ticketing,unix,addr=/run/user/{}/quick_qemu_spice.sock".format(os.getuid())]
+            cmdargs += [
+                "-spice",
+                "gl=on,disable-ticketing,unix,addr=/run/user/{}/quick_qemu_spice.sock".format(  # noqa: 501
+                    os.getuid()
+                )
+            ]
         else:
             cmdargs += ["-vga", "qxl"]
-            cmdargs += ["-spice", "disable-ticketing,unix,addr=/run/user/{}/quick_qemu_spice.sock".format(os.getuid())]
+            cmdargs += [
+                "-spice",
+                "disable-ticketing,unix,addr=/run/user/{}/quick_qemu_spice.sock".format(  # noqa: 501
+                    os.getuid()
+                )
+            ]
 
         cmdargs += ["-device", "ich9-usb-ehci1,id=usb"]
-        cmdargs += ["-device", "ich9-usb-uhci1,masterbus=usb.0,firstport=0,multifunction=on"]
+        cmdargs += ["-device", "ich9-usb-uhci1,masterbus=usb.0,firstport=0,multifunction=on"]  # noqa: 501
         cmdargs += ["-device", "ich9-usb-uhci2,masterbus=usb.0,firstport=2"]
         cmdargs += ["-device", "ich9-usb-uhci3,masterbus=usb.0,firstport=4"]
         cmdargs += ["-chardev", "spicevmc,name=usbredir,id=usbredirchardev1"]
-        cmdargs += ["-device", "usb-redir,chardev=usbredirchardev1,id=usbredirdev1"]
+        cmdargs += ["-device", "usb-redir,chardev=usbredirchardev1,id=usbredirdev1"]  # noqa: 501
         cmdargs += ["-chardev", "spicevmc,name=usbredir,id=usbredirchardev2"]
-        cmdargs += ["-device", "usb-redir,chardev=usbredirchardev2,id=usbredirdev2"]
+        cmdargs += ["-device", "usb-redir,chardev=usbredirchardev2,id=usbredirdev2"]  # noqa: 501
         cmdargs += ["-chardev", "spicevmc,name=usbredir,id=usbredirchardev3"]
-        cmdargs += ["-device", "usb-redir,chardev=usbredirchardev3,id=usbredirdev3"]
-        #cmdargs += ["-device", "virtserialport,chardev=charchannel1,id=channel1,name=org.spice-space.webdav.0", "-chardev", "spiceport,name=org.spice-space.webdav.0,id=charchannel1"]
+        cmdargs += ["-device", "usb-redir,chardev=usbredirchardev3,id=usbredirdev3"]  # noqa: 501
+        # cmdargs += [
+        #   "-device",
+        #   "virtserialport,chardev=charchannel1,id=channel1,name=org.spice-space.webdav.0",  # noqa: 501
+        #   "-chardev",
+        #   "spiceport,name=org.spice-space.webdav.0,id=charchannel1"
+        # ]
     else:
         cmdargs += ["-vga", "qxl"]
         cmdargs += ["-display", config["output"]]
     cmdargs += ["-soundhw", "hda"]
     cmdargs += ["-boot", "order=cd,once=dc"]
-    cmdargs += ["-netdev", "user,id=qemunet0,net=10.0.2.0/24,dhcpstart=10.0.2.15"]
+    cmdargs += [
+        "-netdev", "user,id=qemunet0,net=10.0.2.0/24,dhcpstart=10.0.2.15"
+    ]
 
     if config["sambashare"]:
-        sambashare = os.path.realpath(os.path.expandvars(os.path.expanduser(config["sambashare"])))
+        sambashare = os.path.realpath(os.path.expandvars(os.path.expanduser(
+            config["sambashare"]
+        )))
         if os.path.exists(sambashare):
             cmdargs[-1] += ",smb={},smbserver=10.0.2.4".format(sambashare)
         else:
-            print("\"{}\" does not exist, disable sambashare".format(sambashare))
+            print("\"{}\" does not exist, disable sambashare".format(
+                sambashare
+            ))
     else:
         print("Sambashare disabled")
-    cmdargs += ["-device", "virtio-net-pci,mac={},netdev=qemunet0".format(config["mac"])]
+    cmdargs += [
+        "-device",
+        "virtio-net-pci,mac={},netdev=qemunet0".format(
+            config["mac"]
+        )
+    ]
 
     index = 0
     is_part_argument = False
     for elem in qemu_argv:
         if elem[0] != "-" and not is_part_argument:
-            path = os.path.realpath(os.path.expandvars(os.path.expanduser(elem)))
-            if os.path.exists(path) and not os.path.isdir(path):
+            path = os.path.realpath(os.path.expandvars(os.path.expanduser(
+                elem
+            )))
+            if os.path.isfile(path):
                 if elem[-4:] == ".iso":
-                    cmdargs += ["-drive", "file={path},index={index},media=cdrom,readonly".format(path=path, index=index)]
+                    cmdargs += [
+                        "-drive",
+                        "file={path},index={index},media=cdrom,readonly".format(  # noqa: 501
+                            path=path, index=index
+                        )
+                    ]
                 else:
-                    cmdargs += ["-drive", "file={path},index={index},media=disk,cache=writeback".format(path=path, index=index)]
+                    cmdargs += [
+                        "-drive", "file={path},index={index},media=disk,cache=writeback".format(  # noqa: 501
+                            path=path, index=index
+                        )
+                    ]
+                index += 1
+            elif is_device(path):
+                cmdargs += [
+                    "-drive",
+                    "file={path},index={index},media=disk,cache=writeback,format=raw".format(  # noqa: 501
+                        path=path, index=index
+                    )
+                ]
                 index += 1
             else:
-                print("Not a valid file:", path, "({})".format(elem), file=sys.stderr)
+                print(
+                    "Not a valid file:", path, "({})".format(elem),
+                    file=sys.stderr
+                )
                 return None
-                #cmdargs.append(elem)  # not path
+                # cmdargs.append(elem)  # not path
         else:
             # switch if - less argument is encountered
             if elem[0] != "-":
@@ -115,12 +171,20 @@ def start_qemu(qemu_argv, config):
 
 # part of virt-viewer
 def start_viewer(config):
-    cmdargs = [config["virtviewer"], "spice+unix:///run/user/{}/quick_qemu_spice.sock".format(os.getuid())]
+    cmdargs = [
+        config["virtviewer"],
+        "spice+unix:///run/user/{}/quick_qemu_spice.sock".format(
+            os.getuid()
+        )
+    ]
     return subprocess.Popen(cmdargs)
 
 
 def help():
-    print("Usage: quick_quemu [<isofile>|<discfile>|-<parameter> <argument>]...")
+    print(
+        "Usage: quick_quemu [<isofile>|<discfile>|<devicefile>|-<parameter>"
+        " <argument>]..."
+    )
 
 
 def main(argv, config=default_config):
@@ -136,7 +200,11 @@ def main(argv, config=default_config):
         return
 
     if not os.path.isfile(config["virtviewer"]):
-        print("remote-view of virtviewer not found:", config["virtviewer"], file=sys.stderr)
+        print(
+            "remote-view of virtviewer not found:",
+            config["virtviewer"],
+            file=sys.stderr
+        )
         return
 
     signal.signal(signal.SIGINT, qqemu_cleanup)
