@@ -16,7 +16,7 @@ entry_points["console_scripts"].append('quick_qemu = quick_qemu.__main__:main')
 
 setup(name='quick_qemu',
       version=version,
-      #version_format='{tag}',
+      # version_format='{tag}',
       description='Quick start qemu machines',
       author='Alexander K.',
       author_email='devkral@web.de',
@@ -24,7 +24,7 @@ setup(name='quick_qemu',
       url='https://github.com/devkral/quick_qemu',
       download_url='https://github.com/devkral/quick_qemu/tarball/v'+version,
       entry_points=entry_points,
-      #zip_safe=True,
+      # zip_safe=True,
       platforms='Platform Independent',
       include_package_data=True,
       package_data={
