@@ -5,7 +5,7 @@ license: MIT, see LICENSE.txt
 
 from setuptools import setup
 
-version = "0.3.0"
+version = "0.3.1"
 
 
 entry_points = {"console_scripts": []}
@@ -45,6 +45,8 @@ setup(name='quick_qemu',
           'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3 :: Only',
           'Topic :: System :: Emulators',
           'Topic :: Utilities',

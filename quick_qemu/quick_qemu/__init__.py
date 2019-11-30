@@ -131,24 +131,33 @@ def start_qemu(qemu_argv, config):
             )))
             if os.path.isfile(path):
                 if elem[-4:] == ".iso":
+                    params = "media=cdrom,readonly"
                     cmdargs += [
                         "-drive",
-                        "file={path},index={index},media=cdrom,readonly".format(  # noqa: 501
-                            path=path, index=index
+                        "file={path},index={index},{params}".format(
+                            path=path, index=index, params=params
                         )
                     ]
                 else:
+                    if os.access(path, os.W_OK):
+                        params = "media=disk,cache=writeback"
+                    else:
+                        params = "media=disk,readonly"
                     cmdargs += [
-                        "-drive", "file={path},index={index},media=disk,cache=writeback".format(  # noqa: 501
-                            path=path, index=index
+                        "-drive", "file={path},index={index},{params}".format(
+                            path=path, index=index, params=params
                         )
                     ]
                 index += 1
             elif is_device(path):
+                if os.access(path, os.W_OK):
+                    params = "media=disk,discard=on,cache=none,format=raw"
+                else:
+                    params = "media=disk,readonly"
                 cmdargs += [
                     "-drive",
-                    "file={path},index={index},media=disk,cache=writeback,format=raw".format(  # noqa: 501
-                        path=path, index=index
+                    "file={path},index={index},{params}".format(  # noqa: 501
+                        path=path, index=index, params=params
                     )
                 ]
                 index += 1
@@ -159,8 +168,8 @@ def start_qemu(qemu_argv, config):
                 )
                 return None
                 # cmdargs.append(elem)  # not path
-            # first check if it is a valid file then check access
-            if not os.access(path, os.R_OK | os.W_OK):
+            # first check if it is a valid file then check read access
+            if not os.access(path, os.R_OK):
                 print(
                     "No permission:", path, file=sys.stderr
                 )
