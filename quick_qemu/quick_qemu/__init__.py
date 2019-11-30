@@ -5,7 +5,7 @@ import os
 import subprocess
 import signal
 import time
-import stat
+from pathlib import Path
 
 default_config = {
     "arch": "/usr/bin/qemu-system-x86_64",
@@ -25,11 +25,8 @@ viewer_process = None
 cleanuptried = False
 
 
-def is_device(path):
-    try:
-        return stat.S_ISBLK(os.stat(path).st_mode)
-    except Exception:
-        return False
+def resolve_path(path):
+    return Path(os.path.realpath(os.path.expandvars(os.path.expanduser(path))))
 
 
 def qqemu_cleanup(*args):
@@ -104,10 +101,8 @@ def start_qemu(qemu_argv, config):
     ]
 
     if config["sambashare"]:
-        sambashare = os.path.realpath(os.path.expandvars(os.path.expanduser(
-            config["sambashare"]
-        )))
-        if os.path.exists(sambashare):
+        sambashare = resolve_path(config["sambashare"])
+        if sambashare.is_dir():
             cmdargs[-1] += ",smb={},smbserver=10.0.2.4".format(sambashare)
         else:
             print("\"{}\" does not exist, disable sambashare".format(
@@ -126,10 +121,8 @@ def start_qemu(qemu_argv, config):
     is_part_argument = False
     for elem in qemu_argv:
         if elem[0] != "-" and not is_part_argument:
-            path = os.path.realpath(os.path.expandvars(os.path.expanduser(
-                elem
-            )))
-            if os.path.isfile(path):
+            path = resolve_path(elem)
+            if path.is_file():
                 if elem[-4:] == ".iso":
                     params = "media=cdrom,readonly"
                     cmdargs += [
@@ -139,7 +132,7 @@ def start_qemu(qemu_argv, config):
                         )
                     ]
                 else:
-                    if os.access(path, os.W_OK):
+                    if os.access(str(path), os.W_OK):
                         params = "media=disk,cache=writeback"
                     else:
                         params = "media=disk,readonly"
@@ -149,8 +142,8 @@ def start_qemu(qemu_argv, config):
                         )
                     ]
                 index += 1
-            elif is_device(path):
-                if os.access(path, os.W_OK):
+            elif path.is_block_device():
+                if os.access(str(path), os.W_OK):
                     params = "media=disk,discard=on,cache=none,format=raw"
                 else:
                     params = "media=disk,readonly"
@@ -163,13 +156,13 @@ def start_qemu(qemu_argv, config):
                 index += 1
             else:
                 print(
-                    "Not a valid file:", path, "({})".format(elem),
+                    "Not a valid file: {}, ({})".format(path, elem),
                     file=sys.stderr
                 )
                 return None
                 # cmdargs.append(elem)  # not path
             # first check if it is a valid file then check read access
-            if not os.access(path, os.R_OK):
+            if not os.access(str(path), os.R_OK):
                 print(
                     "No permission:", path, file=sys.stderr
                 )
@@ -210,15 +203,17 @@ def main(argv, config=default_config):
         help()
         return
 
-    if not os.path.isfile(config["arch"]):
-        print("Qemu not found:", config["arch"], file=sys.stderr)
+    if not os.access(config["arch"], os.X_OK):
+        print(
+            "Qemu not found or not executable:",
+            config["arch"], file=sys.stderr
+        )
         return
 
-    if not os.path.isfile(config["virtviewer"]):
+    if not os.access(config["virtviewer"], os.X_OK):
         print(
-            "remote-view of virtviewer not found:",
-            config["virtviewer"],
-            file=sys.stderr
+            "remote-view of virtviewer not found or not executable:",
+            config["virtviewer"], file=sys.stderr
         )
         return
 
