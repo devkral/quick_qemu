@@ -123,7 +123,7 @@ def start_qemu(qemu_argv, config):
         if elem[0] != "-" and not is_part_argument:
             path = resolve_path(elem)
             if path.is_file():
-                if elem[-4:] == ".iso":
+                if path.suffix == ".iso":
                     params = "media=cdrom,readonly"
                     cmdargs += [
                         "-drive",
