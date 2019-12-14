@@ -138,4 +138,6 @@ def main(argv, config=default_config):
             config["arch"], file=sys.stderr
         )
         return
-    subprocess.run(qemu_args(argv, config))
+    cmds = qemu_args(argv, config)
+    if cmds:
+        subprocess.run(cmds)
