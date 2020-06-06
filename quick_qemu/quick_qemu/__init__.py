@@ -31,7 +31,11 @@ def qemu_args(qemu_argv, config):
     cmdargs += ["-global", "kvm-pit.lost_tick_policy=discard"]
     cmdargs += ["-enable-kvm"]
     cmdargs += ["-device", "virtio-balloon"]
-    cmdargs += ["-smp", "cpus={cores},threads=1".format(cores=config["cores"])]
+    cmdargs += [
+        "-smp", "cpus={cores},threads={cores}".format(
+            cores=config["cores"]
+        )
+    ]
     cmdargs += ["-m", config["memory"]]
     cmdargs += ["-vga", "qxl"]
     cmdargs += ["-display", config["output"]]
@@ -60,7 +64,6 @@ def qemu_args(qemu_argv, config):
         )
     ]
 
-    index = 0
     is_part_argument = False
     for elem in qemu_argv:
         if elem[0] != "-" and not is_part_argument:
@@ -70,8 +73,8 @@ def qemu_args(qemu_argv, config):
                     params = "media=cdrom,readonly"
                     cmdargs += [
                         "-drive",
-                        "file={path},index={index},{params}".format(
-                            path=path, index=index, params=params
+                        "file={path},{params}".format(
+                            path=path, params=params
                         )
                     ]
                 else:
@@ -80,11 +83,10 @@ def qemu_args(qemu_argv, config):
                     else:
                         params = "media=disk,readonly"
                     cmdargs += [
-                        "-drive", "file={path},index={index},{params}".format(
-                            path=path, index=index, params=params
+                        "-drive", "file={path},{params}".format(
+                            path=path, params=params
                         )
                     ]
-                index += 1
             elif path.is_block_device():
                 if os.access(str(path), os.W_OK):
                     params = "media=disk,discard=on,cache=none,format=raw"
@@ -92,11 +94,10 @@ def qemu_args(qemu_argv, config):
                     params = "media=disk,readonly"
                 cmdargs += [
                     "-drive",
-                    "file={path},index={index},{params}".format(  # noqa: 501
-                        path=path, index=index, params=params
+                    "file={path},{params}".format(  # noqa: 501
+                        path=path, params=params
                     )
                 ]
-                index += 1
             else:
                 print(
                     "Not a valid file: {}, ({})".format(path, elem),
