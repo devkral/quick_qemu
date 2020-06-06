@@ -31,11 +31,7 @@ def qemu_args(qemu_argv, config):
     cmdargs += ["-global", "kvm-pit.lost_tick_policy=discard"]
     cmdargs += ["-enable-kvm"]
     cmdargs += ["-device", "virtio-balloon"]
-    cmdargs += [
-        "-smp", "cpus={cores},threads={cores}".format(
-            cores=config["cores"]
-        )
-    ]
+    cmdargs += ["-smp", "cpus={cores},threads=1".format(cores=config["cores"])]
     cmdargs += ["-m", config["memory"]]
     cmdargs += ["-vga", "qxl"]
     cmdargs += ["-display", config["output"]]
