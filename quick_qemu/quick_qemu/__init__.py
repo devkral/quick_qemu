@@ -37,7 +37,8 @@ def qemu_args(qemu_argv, config):
     cmdargs += ["-display", config["output"]]
     if config["glrendering"] and config["output"] == "spice-app":
         cmdargs += ["-spice", "gl=on"]
-    cmdargs += ["-soundhw", "hda"]
+    # sound
+    cmdargs += ["-device", "intel-hda", "-device", "hda-duplex"]
     cmdargs += ["-boot", "order=cd,once=dc"]
     cmdargs += [
         "-netdev", "user,id=qemunet0,net=10.0.2.0/24,dhcpstart=10.0.2.15"
