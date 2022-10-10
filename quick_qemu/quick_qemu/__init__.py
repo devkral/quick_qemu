@@ -7,7 +7,6 @@ from pathlib import Path
 
 default_config = {
     "arch": "/usr/bin/qemu-system-x86_64",
-    "virtviewer": "/usr/bin/remote-viewer",
     "mac": "00:aa:31:25:2a:00",
     "memory": "2048",
     "cores": "2",
@@ -41,7 +40,8 @@ def qemu_args(qemu_argv, config):
     cmdargs += ["-device", "intel-hda", "-device", "hda-duplex"]
     cmdargs += ["-boot", "order=cd,once=dc"]
     cmdargs += [
-        "-netdev", "user,id=qemunet0,net=10.0.2.0/24,dhcpstart=10.0.2.15"
+        "-netdev",
+        "user,id=qemunet0,net=10.0.2.0/24,dhcpstart=10.0.2.15",
     ]
 
     if config["sambashare"]:
@@ -49,16 +49,12 @@ def qemu_args(qemu_argv, config):
         if sambashare.is_dir():
             cmdargs[-1] += ",smb={},smbserver=10.0.2.4".format(sambashare)
         else:
-            print("\"{}\" does not exist, disable sambashare".format(
-                sambashare
-            ))
+            print('"{}" does not exist, disable sambashare'.format(sambashare))
     else:
         print("Sambashare disabled")
     cmdargs += [
         "-device",
-        "virtio-net-pci,mac={},netdev=qemunet0".format(
-            config["mac"]
-        )
+        "virtio-net-pci,mac={},netdev=qemunet0".format(config["mac"]),
     ]
 
     is_part_argument = False
@@ -72,7 +68,7 @@ def qemu_args(qemu_argv, config):
                         "-drive",
                         "file={path},{params}".format(
                             path=path, params=params
-                        )
+                        ),
                     ]
                 else:
                     if os.access(str(path), os.W_OK):
@@ -80,9 +76,10 @@ def qemu_args(qemu_argv, config):
                     else:
                         params = "media=disk,readonly"
                     cmdargs += [
-                        "-drive", "file={path},{params}".format(
+                        "-drive",
+                        "file={path},{params}".format(
                             path=path, params=params
-                        )
+                        ),
                     ]
             elif path.is_block_device():
                 if os.access(str(path), os.W_OK):
@@ -93,20 +90,18 @@ def qemu_args(qemu_argv, config):
                     "-drive",
                     "file={path},{params}".format(  # noqa: 501
                         path=path, params=params
-                    )
+                    ),
                 ]
             else:
                 print(
                     "Not a valid file: {}, ({})".format(path, elem),
-                    file=sys.stderr
+                    file=sys.stderr,
                 )
                 return None
                 # cmdargs.append(elem)  # not path
             # first check if it is a valid file then check read access
             if not os.access(str(path), os.R_OK):
-                print(
-                    "No permission:", path, file=sys.stderr
-                )
+                print("No permission:", path, file=sys.stderr)
                 return None
         else:
             # switch if - less argument is encountered
@@ -125,7 +120,9 @@ def help():
     )
 
 
-def main(argv, config=default_config):
+def main(argv=None, config=default_config):
+    if argv is None:
+        argv = sys.argv[1:]
     if len(argv) == 0 or argv[0] in ("-h", "-help", "--help"):
         help()
         return
@@ -133,7 +130,8 @@ def main(argv, config=default_config):
     if not os.access(config["arch"], os.X_OK):
         print(
             "Qemu not found or not executable:",
-            config["arch"], file=sys.stderr
+            config["arch"],
+            file=sys.stderr,
         )
         return
     cmds = qemu_args(argv, config)
