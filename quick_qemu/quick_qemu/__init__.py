@@ -26,7 +26,7 @@ def qemu_args(qemu_argv, config):
     cmdargs = [config["arch"]]
     cmdargs += ["-machine", config["machine"]]
     cmdargs += ["-cpu", config["cpu"]]
-    cmdargs += ["-rtc", "base=localtime,driftfix=slew", "-no-hpet"]
+    cmdargs += ["-rtc", "base=localtime,driftfix=slew"]
     cmdargs += ["-global", "kvm-pit.lost_tick_policy=discard"]
     cmdargs += ["-enable-kvm"]
     cmdargs += ["-device", "virtio-balloon"]
@@ -63,7 +63,7 @@ def qemu_args(qemu_argv, config):
             path = resolve_path(elem)
             if path.is_file():
                 if path.suffix == ".iso":
-                    params = "media=cdrom,readonly"
+                    params = "media=cdrom,readonly=on"
                     cmdargs += [
                         "-drive",
                         "file={path},{params}".format(
@@ -74,7 +74,7 @@ def qemu_args(qemu_argv, config):
                     if os.access(str(path), os.W_OK):
                         params = "media=disk,cache=writeback"
                     else:
-                        params = "media=disk,readonly"
+                        params = "media=disk,readonly=on"
                     cmdargs += [
                         "-drive",
                         "file={path},{params}".format(
@@ -85,7 +85,7 @@ def qemu_args(qemu_argv, config):
                 if os.access(str(path), os.W_OK):
                     params = "media=disk,discard=on,cache=none,format=raw"
                 else:
-                    params = "media=disk,readonly"
+                    params = "media=disk,readonly=on"
                 cmdargs += [
                     "-drive",
                     "file={path},{params}".format(  # noqa: 501
